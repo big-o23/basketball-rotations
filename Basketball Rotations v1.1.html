@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Basketball Rotations</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#f6f5f1;--card:#fff;--ink:#1d1d1f;--mut:#6b6b70;--line:#e2e0d8;--acc:#e8590c;--onink:#fff;--off:#efede6}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#141415;--card:#1e1e20;--ink:#f2f2f3;--mut:#9a9aa0;--line:#333336;--acc:#ff8a4c;--onink:#1a1a1a;--off:#2a2a2d}}
+:root[data-theme="dark"]{--bg:#141415;--card:#1e1e20;--ink:#f2f2f3;--mut:#9a9aa0;--line:#333336;--acc:#ff8a4c;--onink:#1a1a1a;--off:#2a2a2d}
+*,*::before,*::after{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:860px;margin:0 auto;padding:16px}
+h1{font-size:1.5rem;margin:.2em 0 .1em}
+.sub{color:var(--mut);margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+h2{font-size:1rem;margin:0 0 10px}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;border:1px solid var(--line);border-radius:999px;background:var(--off);overflow:hidden}
+.chip.st{background:var(--acc);border-color:var(--acc)}
+.chip button{all:unset;cursor:pointer;padding:8px 12px;color:var(--ink)}
+.chip.st button{color:var(--onink);font-weight:600}
+.chip .x{padding:8px 12px 8px 6px;opacity:.9;font-weight:700;border-left:1px solid var(--line)}
+.pos{display:flex;gap:6px;align-items:center;padding:0 8px;border-left:1px solid var(--line)}
+.pos label{flex-direction:row;align-items:center;gap:3px;color:var(--ink);font-size:.82rem;cursor:pointer}
+.chip.st .pos label{color:var(--onink)}
+.pos input{margin:0}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin-top:10px}
+label{display:flex;flex-direction:column;font-size:.85rem;color:var(--mut);gap:4px}
+input[type=number],input[type=text]{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;width:110px}
+input[type=text]{width:160px}
+.opt{flex-direction:row;align-items:center;gap:6px;color:var(--ink);font-size:.95rem}
+button.btn{font:inherit;cursor:pointer;border:1px solid var(--line);background:var(--off);color:var(--ink);border-radius:10px;padding:9px 14px}
+button.btn.pri{background:var(--acc);border-color:var(--acc);color:var(--onink);font-weight:600}
+.hint{color:var(--mut);font-size:.85rem;margin:8px 0 0}
+.warn{color:#c92a2a}
+details.bulk{margin-top:12px}
+details.bulk summary{cursor:pointer;font-weight:600}
+textarea{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px;width:100%;resize:vertical}
+.scroll{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.9rem}
+th,td{border:1px solid var(--line);padding:6px 8px;text-align:center;white-space:nowrap}
+th:first-child,td:first-child{text-align:left;position:sticky;left:0;background:var(--card)}
+td.on{background:var(--acc);color:var(--onink);font-weight:600}
+select{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:6px}
+thead th{background:var(--off)}
+ul{margin:0;padding-left:18px}
+li{margin:4px 0}
+.ok{color:var(--mut);margin:0 0 10px}
+</style>
+</head>
+<body>
+<main>
+<h1>🏀 Basketball Rotations</h1>
+<p class="sub">Equal court time for everyone, with your starting five or a random one.</p>
+
+<section class="card">
+<h2>Players</h2>
+<div class="chips" id="roster"></div>
+<p class="hint">Tap a name to mark a starter. Tap × to remove a player from the group, or add someone new below. Tick G (guard), F (forward) or C (centre) for each player; a player can have several. Once positions are set, every lineup has at least one guard and one centre.</p>
+<div class="row">
+<label>Add player<input type="text" id="newp" placeholder="Name"></label>
+<button class="btn" id="add">Add</button>
+<button class="btn" id="reset">Reset roster</button>
+</div>
+<details class="bulk"><summary>Enter a whole new list</summary>
+<div class="row"><label style="width:100%">Paste or edit names: one per line, or separated by commas<textarea id="bulk" rows="7" placeholder="Alex&#10;Jordan&#10;Sam&#10;Taylor&#10;Riley"></textarea></label></div>
+<div class="row"><button class="btn pri" id="replace">Replace roster</button><button class="btn" id="append">Add to roster</button></div>
+<p class="hint" id="bmsg"></p>
+</details>
+</section>
+
+<section class="card">
+<h2>Starting five</h2>
+<div class="row" style="margin-top:0">
+<label class="opt"><input type="radio" name="mode" value="mine" checked> My starting 5 (tap names above)</label>
+<label class="opt"><input type="radio" name="mode" value="random"> Random starting 5</label>
+</div>
+<div class="row">
+<button class="btn" id="pick5">Pick random 5 for me</button>
+<button class="btn" id="clear">Clear</button>
+<span class="hint" id="cnt"></span>
+</div>
+</section>
+
+<section class="card">
+<h2>Game setup</h2>
+<div class="row" style="margin-top:0">
+<label>Periods<input type="number" id="per" value="4" min="1" max="12"></label>
+<label>Minutes per period<input type="number" id="min" value="10" min="1" max="60"></label>
+<label>Rotations per period<input type="number" id="seg" value="2" min="1" max="10"></label>
+<label class="opt"><input type="checkbox" id="rnd" checked> Randomise who subs on</label>
+<label class="opt"><input type="checkbox" id="q3"> Same starting 5 at the start of Q1 and Q3</label>
+</div>
+<div class="row"><button class="btn pri" id="go">Generate rotation</button><button class="btn" id="shuf">Reshuffle rotation (keep starters)</button></div>
+</section>
+
+<section class="card" id="resCard" hidden>
+<h2>Rotation</h2>
+<div id="out"></div>
+<div class="row"><label class="opt">Show in boxes <select id="lab"><option value="name">Names</option><option value="init">Initials</option></select></label><button class="btn pri" id="xjpg">Download JPG</button><button class="btn" id="xpng">Download PNG</button><span class="hint" id="xmsg"></span></div>
+<div id="xprev"></div>
+</section>
+</main>
+
+<script>
+const DEF=["Charlie","Neth","Luke","Samir","Vikram","Makur","George","Seth"];
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+function load(){try{const v=JSON.parse(localStorage.getItem("bb-roster"));return Array.isArray(v)&&v.length?v:null}catch(e){return null}}
+function save(){try{localStorage.setItem("bb-roster",JSON.stringify(players))}catch(e){}}
+let players=load()||DEF.slice(), starters=new Set();
+function loadPos(){try{const v=JSON.parse(localStorage.getItem("bb-pos"));return v&&typeof v==="object"?v:{}}catch(e){return{}}}
+function savePos(){try{localStorage.setItem("bb-pos",JSON.stringify(pos))}catch(e){}}
+let pos=loadPos();
+const POSN={G:"Guard",F:"Forward",C:"Centre"};
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const mode=()=>document.querySelector("input[name=mode]:checked").value;
+
+function renderRoster(){
+  $("roster").innerHTML=players.map(p=>{const s=starters.has(p);
+    return `<span class="chip${s?" st":""}"><button data-t="${esc(p)}">${s?"★ ":""}${esc(p)}</button><span class="pos">${["G","F","C"].map(c=>`<label title="${POSN[c]}"><input type="checkbox" data-n="${esc(p)}" data-c="${c}"${(pos[p]||"").includes(c)?" checked":""}>${c}</label>`).join("")}</span><button class="x" data-r="${esc(p)}" aria-label="Remove ${esc(p)}">×</button></span>`}).join("");
+  $("cnt").textContent=starters.size+" / 5 starters picked";
+}
+$("roster").addEventListener("click",e=>{
+  const t=e.target.dataset.t, r=e.target.dataset.r;
+  if(t===undefined&&r===undefined)return;
+  if(t!==undefined){
+    document.querySelector("input[name=mode][value=mine]").checked=true;
+    if(starters.has(t))starters.delete(t);
+    else if(starters.size<5)starters.add(t);
+  }else if(r!==undefined){
+    players=players.filter(p=>p!==r);starters.delete(r);delete pos[r];save();savePos();
+  }
+  renderRoster();
+});
+$("roster").addEventListener("change",e=>{
+  const n=e.target.dataset.n,c=e.target.dataset.c;if(n===undefined)return;
+  let v=(pos[n]||"").replace(c,"");if(e.target.checked)v+=c;
+  pos[n]=["G","F","C"].filter(x=>v.includes(x)).join("");if(!pos[n])delete pos[n];savePos();
+});
+$("add").onclick=()=>{
+  const n=$("newp").value.trim();
+  if(n&&!players.includes(n)){players.push(n);save();renderRoster()}
+  $("newp").value="";
+};
+$("newp").addEventListener("keydown",e=>{if(e.key==="Enter")$("add").click()});
+$("reset").onclick=()=>{players=DEF.slice();starters.clear();pos={};save();savePos();renderRoster()};
+const parseNames=t=>[...new Set(t.split(/[\n,;]+/).map(s=>s.trim()).filter(Boolean))];
+function bulk(replace){
+  const names=parseNames($("bulk").value);
+  if(!names.length){$("bmsg").textContent="Enter at least one name.";return}
+  players=replace?names:players.concat(names.filter(n=>!players.includes(n)));
+  starters=new Set([...starters].filter(p=>players.includes(p)));
+  save();renderRoster();
+  $("bmsg").textContent="Roster now has "+players.length+" players"+(players.length<5?" (you need at least 5).":".");
+}
+$("replace").onclick=()=>bulk(true);
+$("append").onclick=()=>bulk(false);
+document.querySelector("details.bulk").addEventListener("toggle",e=>{if(e.target.open&&!$("bulk").value)$("bulk").value=players.join("\n")});
+$("pick5").onclick=()=>{
+  starters=new Set(shuffle(players).slice(0,5));
+  document.querySelector("input[name=mode][value=mine]").checked=true;renderRoster();
+};
+$("clear").onclick=()=>{starters.clear();renderRoster()};
+
+const fmt=m=>{const t=Math.round(m*60);return Math.floor(t/60)+":"+String(t%60).padStart(2,"0")};
+const gcd=(a,b)=>b?gcd(b,a%b):a;
+
+let lastSt=null;
+function gen(keep){
+  const N=players.length,
+    P=Math.max(1,Math.floor(+$("per").value)||1),
+    M=Math.max(1,+$("min").value||1),
+    K=Math.max(1,Math.floor(+$("seg").value)||1),
+    S=P*K, L=M/K, out=$("out");
+  $("resCard").hidden=false;
+  if(N<5){lastPlan=null;out.innerHTML='<p class="warn">Add at least 5 players.</p>';return}
+
+  let st=[...starters].filter(p=>players.includes(p)), notes=[];
+  const canG=p=>(pos[p]||"").includes("G"), canC=p=>(pos[p]||"").includes("C");
+  const okLine=l=>{const g=l.filter(canG),c=l.filter(canC);return g.length>0&&c.length>0&&(g.length>1||c.length>1||g[0]!==c[0])};
+  const ruleOn=players.some(p=>canG(p)||canC(p));
+  if(ruleOn&&!okLine(players)){lastPlan=null;out.innerHTML='<p class="warn">Positions are set, but the group needs at least one guard (G) and one centre (C), on two different players.</p>';return}
+  const ALL=[];
+  (function r(s,c){if(c.length===5){ALL.push(c.map(i=>players[i]));return}for(let i=s;i<N;i++){c.push(i);r(i+1,c);c.pop()}})(0,[]);
+  const VALID=ruleOn?ALL.filter(okLine):ALL;
+  const keepSt=keep===true&&lastSt&&lastSt.every(p=>players.includes(p))&&!(mode()==="mine"&&st.length===5);
+  if(keepSt)st=lastSt.slice();
+  else{
+    const want=mode()==="random"?[]:st;
+    const sc=l=>l.filter(p=>want.includes(p)).length;
+    const best=Math.max(...VALID.map(sc)), pool=VALID.filter(l=>sc(l)===best);
+    const chosen=pool[Math.floor(Math.random()*pool.length)];
+    const gone=want.filter(p=>!chosen.includes(p)), added=chosen.filter(p=>!want.includes(p));
+    if(gone.length)notes.push(`A guard and a centre must always be on court, so ${gone.join(", ")} ${gone.length>1?"were":"was"} swapped for ${added.join(", ")} in your starting five.`);
+    else if(want.length>0&&want.length<5)notes.push(`You picked ${want.length} starter${want.length===1?"":"s"}, so the rest were chosen randomly.`);
+    st=chosen.slice();
+  }
+
+  const rnd=keep===true||$("rnd").checked, tie={}, cnt={}, last={}, rk={};
+  players.forEach((p,i)=>{tie[p]=i;cnt[p]=0;last[p]=-1;rk[p]=rnd?Math.random():i});
+  const forced=[0];
+  if($("q3").checked){
+    if(P>=3)forced.push(2*K);
+    else notes.push("Restarting the same five needs at least 3 periods, so that option was skipped.");
+  }
+  const total=5*S, base=Math.floor(total/N), tgt={};
+  players.forEach(p=>tgt[p]=base);
+  const fcount=p=>st.includes(p)?forced.length:0;
+  let extra=total-base*N;
+  players.slice().sort((a,b)=>(fcount(b)>base)-(fcount(a)>base)||rk[a]-rk[b]).forEach(p=>{if(extra>0){tgt[p]++;extra--}});
+  const segs=[];
+  for(let s=0;s<S;s++){
+    let pick;
+    if(forced.includes(s))pick=st;
+    else{
+      if(rnd)players.forEach(p=>tie[p]=Math.random());
+      const need=p=>tgt[p]-cnt[p]-(st.includes(p)?forced.filter(x=>x>s).length:0);
+      const ord=players.slice().sort((a,b)=>need(b)-need(a)||last[a]-last[b]||tie[a]-tie[b]);
+      if(!ruleOn)pick=ord.slice(0,5);
+      else{
+        const rq={};ord.forEach((p,i)=>rq[p]=i*i);
+        let bs=Infinity;
+        VALID.forEach(l=>{let v=0;for(const p of l)v+=rq[p];if(v<bs){bs=v;pick=l}});
+      }
+    }
+    pick.forEach(p=>{cnt[p]++;last[p]=s});
+    segs.push(new Set(pick));
+  }
+
+  lastSt=st.slice();
+  lastPlan={players:players.slice(),st:st.slice(),segs,cnt:Object.assign({},cnt),P,K,L,S,pos:Object.assign({},pos)};
+  const vals=players.map(p=>cnt[p]), mn=Math.min(...vals), mx=Math.max(...vals), m=N/gcd(N,5);
+  let html="";
+  if(mn===mx)html+=`<p class="ok">Everyone plays exactly ${mn} of ${S} segments (${+(mn*L).toFixed(1)} min).</p>`;
+  else html+=`<p class="ok">Court time can’t be perfectly equal with these settings: players get ${+(mn*L).toFixed(1)}–${+(mx*L).toFixed(1)} min. Try changing periods × rotations (a multiple of ${m} gives exactly equal time).${ruleOn?" The guard and centre rule can also limit this, and more players who can play G or C helps.":""}</p>`;
+  notes.forEach(n=>html+=`<p class="ok">${esc(n)}</p>`);
+
+  const lb=labels(players,$("lab").value);
+  html+='<div class="scroll"><table><thead><tr><th></th>';
+  for(let q=0;q<P;q++)html+=`<th colspan="${K}">Period ${q+1}</th>`;
+  html+='<th>Total</th></tr><tr><th>Player</th>';
+  for(let s=0;s<S;s++)html+=`<th>${fmt((s%K)*L)}</th>`;
+  html+="<th></th></tr></thead><tbody>";
+  players.forEach(p=>{
+    html+=`<tr><td>${st.includes(p)?"★ ":""}${esc(p)}${pos[p]?` <small style="opacity:.7">${pos[p].split("").join("/")}</small>`:""}</td>`;
+    segs.forEach(g=>html+=g.has(p)?`<td class="on" data-p="${esc(p)}">${esc(lb[p])}</td>`:"<td></td>");
+    html+=`<td><b>${+(cnt[p]*L).toFixed(1)} min</b></td></tr>`;
+  });
+  html+="</tbody></table></div>";
+
+  html+=`<h2 style="margin-top:16px">Starting five</h2><p>${st.map(esc).join(", ")}</p><h2>Substitutions</h2><ul>`;
+  for(let s=1;s<S;s++){
+    const inn=players.filter(p=>segs[s].has(p)&&!segs[s-1].has(p)),
+          off=players.filter(p=>!segs[s].has(p)&&segs[s-1].has(p));
+    html+=`<li><b>P${Math.floor(s/K)+1} · ${fmt((s%K)*L)}</b> — In: ${inn.map(esc).join(", ")||"–"} · Out: ${off.map(esc).join(", ")||"–"}</li>`;
+  }
+  html+="</ul>";
+  out.innerHTML=html;
+}
+let lastPlan=null, dl=null;
+try{if(window.claude&&claude.use)claude.use("downloads").then(x=>{dl=x}).catch(()=>{})}catch(e){}
+const FONT='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+function drawChart(){
+  const d=lastPlan;if(!d)return null;
+  const {players:pl,st,segs,cnt,P,K,L,S,pos:ps}=d;
+  const nm=p=>(st.includes(p)?"★ ":"")+p+(ps[p]?"  "+ps[p].split("").join("/"):"");
+  const m=document.createElement("canvas").getContext("2d");
+  const lb=labels(pl,$("lab").value);
+  const pad=24,rh=34,totW=100,sc=2;
+  m.font="600 13px "+FONT;
+  const cw=Math.max(54,...pl.map(p=>m.measureText(lb[p]).width+16));
+  m.font="600 15px "+FONT;
+  const nameW=Math.max(90,...pl.map(p=>m.measureText(nm(p)).width))+26;
+  const tableW=nameW+S*cw+totW, W=Math.max(tableW,640)+pad*2, inner=W-pad*2;
+  m.font="14px "+FONT;
+  const wrap=(t,w)=>{const o=[];let l="";for(const word of t.split(" ")){const x=l?l+" "+word:word;if(m.measureText(x).width>w&&l){o.push(l);l="    "+word}else l=x}o.push(l);return o};
+  const startLines=wrap("Starting five: "+st.join(", "),inner);
+  const subLines=[];
+  for(let s=1;s<S;s++){
+    const inn=pl.filter(p=>segs[s].has(p)&&!segs[s-1].has(p)),off=pl.filter(p=>!segs[s].has(p)&&segs[s-1].has(p));
+    wrap(`P${Math.floor(s/K)+1} ${fmt((s%K)*L)}  In: ${inn.join(", ")||"–"}  |  Out: ${off.join(", ")||"–"}`,inner).forEach(x=>subLines.push(x));
+  }
+  const titleH=34,startH=startLines.length*20+8,tableH=(2+pl.length)*rh,subH=28+subLines.length*20;
+  const H=pad+titleH+startH+tableH+16+subH+pad;
+  const c=document.createElement("canvas");c.width=W*sc;c.height=H*sc;
+  const ctx=c.getContext("2d");ctx.scale(sc,sc);
+  ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
+  const cell=(x,y,w,h,fill,t,font,col,al)=>{
+    ctx.fillStyle=fill;ctx.fillRect(x,y,w,h);ctx.strokeStyle="#d9d6cc";ctx.lineWidth=1;ctx.strokeRect(x+.5,y+.5,w,h);
+    if(t){ctx.font=font;ctx.fillStyle=col;ctx.textBaseline="middle";ctx.textAlign=al;ctx.fillText(t,al==="left"?x+10:x+w/2,y+h/2+1)}
+  };
+  let y=pad;
+  ctx.textBaseline="alphabetic";ctx.textAlign="left";
+  ctx.fillStyle="#1d1d1f";ctx.font="700 24px "+FONT;ctx.fillText("Basketball Rotation",pad,y+24);y+=titleH;
+  ctx.font="14px "+FONT;ctx.fillStyle="#555";startLines.forEach((t,i)=>ctx.fillText(t,pad,y+14+i*20));y+=startH;
+  const x0=pad,hf="#efede6",ink="#1d1d1f";
+  cell(x0,y,nameW,rh*2,hf,"Player","600 14px "+FONT,ink,"left");
+  for(let q=0;q<P;q++)cell(x0+nameW+q*K*cw,y,K*cw,rh,hf,"Period "+(q+1),"600 14px "+FONT,ink,"center");
+  cell(x0+nameW+S*cw,y,totW,rh*2,hf,"Total","600 14px "+FONT,ink,"center");
+  for(let s=0;s<S;s++)cell(x0+nameW+s*cw,y+rh,cw,rh,hf,fmt((s%K)*L),"13px "+FONT,ink,"center");
+  y+=rh*2;
+  pl.forEach(p=>{
+    cell(x0,y,nameW,rh,"#fff",nm(p),"600 15px "+FONT,ink,"left");
+    segs.forEach((g,s)=>cell(x0+nameW+s*cw,y,cw,rh,g.has(p)?"#e8590c":"#fff",g.has(p)?lb[p]:"","600 13px "+FONT,"#fff","center"));
+    cell(x0+nameW+S*cw,y,totW,rh,"#fff",+(cnt[p]*L).toFixed(1)+" min","600 14px "+FONT,ink,"center");
+    y+=rh;
+  });
+  y+=16;ctx.textBaseline="alphabetic";ctx.textAlign="left";
+  ctx.font="700 16px "+FONT;ctx.fillStyle=ink;ctx.fillText("Substitutions",pad,y+16);y+=28;
+  ctx.font="14px "+FONT;ctx.fillStyle="#333";subLines.forEach((t,i)=>ctx.fillText(t,pad,y+14+i*20));
+  return c;
+}
+async function exportImg(type){
+  const msg=$("xmsg"),prev=$("xprev");prev.innerHTML="";msg.textContent="";
+  const c=drawChart();
+  if(!c){msg.textContent="Generate a rotation first.";return}
+  const mime=type==="jpg"?"image/jpeg":"image/png";
+  const blob=await new Promise(r=>c.toBlob(r,mime,0.92));
+  if(dl&&blob){
+    try{await dl.save({filename:"basketball-rotation."+type,data:blob});msg.textContent="Saved.";return}
+    catch(e){if(e&&e.code==="declined"){msg.textContent="Save cancelled.";return}}
+  }
+  const img=new Image();img.src=c.toDataURL(mime,0.92);img.alt="Rotation chart";
+  img.style.cssText="max-width:100%;margin-top:10px;border:1px solid var(--line)";
+  prev.appendChild(img);
+  msg.textContent="Direct saving isn’t available here. Press and hold (or right-click) the image to save it.";
+}
+$("xjpg").onclick=()=>exportImg("jpg");
+$("xpng").onclick=()=>exportImg("png");
+function labels(pl,mode){
+  const o={};
+  pl.forEach(p=>{
+    if(mode==="name"){o[p]=p;return}
+    const low=p.toLowerCase();let n=1;
+    while(n<p.length&&pl.some(q=>q!==p&&q.toLowerCase().startsWith(low.slice(0,n))))n++;
+    o[p]=p.charAt(0).toUpperCase()+p.slice(1,n);
+  });
+  return o;
+}
+$("lab").onchange=()=>{
+  if(!lastPlan)return;
+  const lb=labels(lastPlan.players,$("lab").value);
+  document.querySelectorAll("td.on").forEach(td=>{td.textContent=lb[td.dataset.p]||""});
+};
+$("go").onclick=()=>gen();
+$("shuf").onclick=()=>gen(true);
+renderRoster();
+</script>
+</body>
+</html>
